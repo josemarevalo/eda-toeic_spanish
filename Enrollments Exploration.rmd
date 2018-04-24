@@ -1,0 +1,541 @@
+---
+title: "Enrollments Exploration by José Arévalo"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: inline
+---
+
+This report explores a dataset containing results for the Test of English for International Communication (TOEIC), for approximately 2,000 enrollments of the Faculty of Business and Economics from the University of Chile. It also contains their results on the Chilean Higher Education Selection Exam (PSU) as well as other atributtes related to their High Schools.
+
+***
+
+# Data Set
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#setwd("/Users/josearevalo/Desktop/DAND_Project")
+# Import the libraries included in this file.
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(memisc)
+
+# Load data
+enrollments <- read.csv('enrollments.csv')
+
+# Replace 0's for NA's for the variables "history" and "science"
+enrollments$history[enrollments$history == 0] <- NA
+enrollments$science[enrollments$science == 0] <- NA
+```
+
+```{r echo=FALSE}
+# Get dataframe's dimensions
+dim(enrollments)
+```
+
+```{r echo=FALSE}
+# Show dataframe's structure
+str(enrollments, give.attr=FALSE)
+```
+
+```{r echo=FALSE}
+# Show statistical summaries of the variables
+summary(enrollments)
+```
+
+Our dataset consists of ten variables, with almost 2,000 observations.
+
+# Univariate Plots Section
+
+```{r echo=FALSE}
+# Create histogram and summaries for the variables
+qplot(x=toeic, data=enrollments, geom = 'histogram', binwidth=21)
+summary(enrollments$toeic)
+```
+
+The TOEIC distribution appears to be unimodal with the score peaking around 475. 
+It's important to note that the scale tof this test goes from 10 to 990, so the mean (461) it's quite low.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+qplot(x=year, data=enrollments, geom = 'histogram')
+```
+
+
+```{r echo=FALSE, fig.height = 3, fig.width = 3, fig.align = "center"}
+ggplot(aes(x=gender, y=..count..), data=enrollments) +
+  geom_bar()
+```
+
+```{r echo=FALSE, fig.height = 3, fig.width = 3, fig.align = "center"}
+ggplot(aes(x=hs.location, y=..count..), data=enrollments) +
+  geom_bar()
+
+```
+
+```{r echo=FALSE, fig.height = 3, fig.width = 3, fig.align = "center"}
+ggplot(aes(x=hs.type, y=..count..), data=enrollments) +
+  geom_bar()
+```
+
+In regards to the categorical variables, we can see that how most enrollments are males, come from private high schools located in the capital city, Santiago.
+
+```{r echo=FALSE}
+qplot(x=hs.score, data=enrollments, geom = 'histogram', binwidth=10)
+```
+
+It's seems like hs.score has a semi discrete distribution shape. This make sense given that this is the result of a transformation from a different scale of scores (from 1 to 7). This it's done by the National Eduation Ministry to make high school's scores easier to compare with the higher education selection exam's results. 
+
+It is important to say that for the high school score, as well as for the national tests of maths, history, science and spanish scores, the scale of scores goes from 350 to 850.
+
+```{r echo=FALSE}
+qplot(x=math, data=enrollments, geom = 'histogram', binwidth=5)
+summary(enrollments$math)
+```
+
+It's an interesting distribution as on the left tail looks like a continuos variable but the closer it gets to the maximum score (850), it starts to behave in a more discrete way. This make sense given the test it's only 70 questions long and the penalties are relatively higher when you have less incorrect answers.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+qplot(x=history, data = enrollments, geom = 'histogram', binwidth=10)
+summary(enrollments$history)
+```
+
+This distribution seems more "normal", given that the median and mean (651 and 653) are further apart from the maximum test score (850), in comparison to the math scores.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+qplot(x=science, data = enrollments, geom = 'histogram', binwidth=10) +
+  scale_x_continuous(limits = c(400, 850))
+summary(enrollments$science)
+```
+
+Looks quite unimodal with a peak around 650. Just as before, the further from the maximum score, the more continuos and normal distribution.
+
+```{r echo=FALSE}
+qplot(x=spanish, data = enrollments, geom = 'histogram', binwidth=5)
+summary(enrollments$spanish)
+```
+
+Similar case to math's distribution.  
+
+It seems that most test results have a similar distribution shape, peaking around 650 points. With the exception beign math, where the peak is around 725 points. This makes sense, given that mathematics has a considerable higher relative value when enrolling into the Faculty.  
+  
+Having said that, at this point I should mention that the net enrollment score it's calculated by the following equaiton:  
+  
+$enrollment.score = math*0.5 + hs.score*0.2 + max(history,science)*0.2 + spanish*0.1$  
+  
+I am interested in that variable as well, so I will include it in the rest of the analysis.
+Note that the TOEIC test does not take part in this equation as it is not a requierment and it's only undertaken to assess already enrolled students. 
+
+```{r echo=FALSE}
+# Create enrollment.score variable according to faculty's criteria:
+# enrollment.score = math*0.5 + hs.score*0.2 + max(history,science)*0.2 + spanish*0.1
+enrollments$enrollment.score <-
+  enrollments$math * 0.5 + 
+  enrollments$hs.score * 0.2 +
+  pmax(ifelse(is.na(enrollments$history), 0, enrollments$history),
+       ifelse(is.na(enrollments$science), 0, enrollments$science)) *0.2 +
+  enrollments$spanish * 0.1
+
+qplot(x=enrollment.score, data=enrollments, geom = 'histogram', binwidth = 5)
+
+```
+
+***
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+
+There are 1,956 enrollments in the dataset with 10 variables (year, gender, hs.type, hs.location, hs.score, math, history, science, spanish and toeic).
+
+Other observations:
+
+* There are about 30% more males than female enrollments.
+* The median spanish result is 674.
+* Most enrollments come from a high school located in the capital city.
+* Most enrollments correspond to the years 2007 to 2010.
+
+### What is/are the main feature(s) of interest in your dataset?
+
+The main features in the data set are toeic and spanish. I’d like to determine which features are best for predicting results on the TOEIC test undertaken by new enrollments. I suspect spanish test score and some combination of the other variables can be used to build a predictive model for TOEIC results.
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+
+Hs.location and hs.score likely contribute to the level of english of a recent graduate. I think hs.type (either private or public) and enrollment.score probably contribute most to the TOEIC results as they could show a level of self confidence or higher general knoledge when completing the test.
+
+### Did you create any new variables from existing variables in the dataset?
+
+I created a variable for the enrollment final score (enrollment.score) using the other tests' scores and their correpsonding relative values. This arose in the univariate section of my analysis when realising that the TOEIC test it's undertaken after the recent graduates are already enrolled and they know their final enrollment score, which could play a self confidence role when completing the TOEIC test.
+
+### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+
+The only unusual thing was how the the continuos variables tended to behave in a discrete way when approaching the highest posible value. Although this make sense given that the tests results are constructed to separate the whole population.
+
+In the enrollment process only the highest score between history and science was considered to calculate the net enrollment score. This is why there where so many values with 0's within this two tests. I transformed these values to NA's.
+
+***
+
+# Bivariate Plots Section
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Calculate correlation matrix for continuos variables
+cols <- c("hs.score", "math", "history", "science", "spanish", "toeic", "enrollment.score")
+res <- cor(enrollments[cols], use = "pairwise.complete.obs")
+round(res, 2)
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Create function to improve plot's visualizations
+lowerFn <- function(data, mapping, method = "lm", ...) {
+  p <- ggplot(data = data, mapping = mapping) +
+    geom_point(colour = "blue", alpha = 0.05) +
+    geom_smooth(method = method, color = "red", ...)
+  p
+}
+# Create ggpairs figure with continuos variables
+ggp <- ggpairs(
+  enrollments[, cols],
+  upper = list(continuous = wrap("cor", size = 4)),
+  lower = list(continuous = wrap(lowerFn, method = "lm")),
+  diag = list(continuous = wrap("barDiag", colour = "blue"))
+)
+print(ggp, progress = F)
+
+# Create ggpairs figure with categorical variables
+cols2 <- c("toeic", "gender", "hs.type", "hs.location")
+ggp2 <- ggpairs(
+  enrollments[, cols2],
+  upper = list(continuous = wrap("cor", size = 4)),
+  lower = list(continuous = wrap(lowerFn, method = "lm")),
+  diag = list(continuous = wrap("barDiag", colour = "blue"))
+)
+print(ggp2, progress = F)
+```
+
+Toeic correlates strongly with spanish, which was my suspicion. However, to my surprise hs.score does not correalte strongly with toeic.
+
+Spanish also correlates strongly with history, which makes sense. It also correlates with science, in a weaker way. 
+
+There's a strong negative correlation between math and hs.score, which is weird. 
+
+Math, and science do not seem to have strong correlations with toeic.
+
+I want to take a closer look at scatter plots involving toeic and some other continuos variables like spanish, hs.score, history and enrollment.score
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Create scatterplots to analyse pairs of variables
+ggplot(aes(y=toeic, x=spanish), data=enrollments) +
+  geom_point()
+```
+
+It seems to be a lot of noise, but there's definitely a positive relationship between spanish and toeic scores.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y=toeic, x=hs.score), data=enrollments) +
+  geom_jitter(alpha=0.1, size=2)
+```
+
+Nope. Even after adding jitter, transparency, and changing the size of the points, there doesn't seem to be any relation between toeic and hs.score.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y=toeic, x=history), data=enrollments) +
+  geom_point(alpha=0.5, size=3)
+```
+There is definitely a positive correlation, but the slope is not high as in with spanish.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y=toeic, x=enrollment.score), data=enrollments) +
+  geom_point(alpha=0.2, size=3) +
+  scale_x_continuous(limits = c(625,825)) +
+  geom_smooth(method = lm)
+```
+
+This one was harder to see, so ontop of the jitter, size and transparency, I utilised a smooth line (linear model) to establish the relation between toeic and enrollment.score.  
+
+Before I move on, I want to take another look to the relationship between hs.score and math.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y=math, x=hs.score), data=enrollments) +
+  geom_point(alpha=0.07, size=3, position = 'jitter')
+```
+
+There is a clear negative correlation. After thinking about this for a while, I guess it makes sense considering the enrollment criteria (formula).
+  
+Next, I’ll have a closer look at how the categorical features vary with toeic.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Create boxplots and summaries to analyse pairs of variables
+ggplot(aes(y=toeic, x=hs.location), data=enrollments) +
+  geom_boxplot()
+
+by(enrollments$toeic, enrollments$hs.location, summary)
+```
+
+It seems like high schools located in the capital city have slightly higher scores than the ones from other regions. There are 27 points of difference between the median values for both groups, but it is not as relevant as I was expecting.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y=toeic, x=hs.type), data=enrollments) +
+  geom_boxplot()
+
+by(enrollments$toeic, enrollments$hs.type, summary)
+
+```
+
+There is a difference of 67 points for the median toeic value between private and public high scool, which is quite considerable.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(aes(y=toeic, x=gender), data=enrollments) +
+  geom_boxplot()
+
+by(enrollments$toeic, enrollments$gender, summary)
+```
+
+It seems like male scores are slightly higher for men than female. 24 points of difference in the median value between groups.
+
+***
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
+
+Toeic correlates strongly with spanish and slightly with history and enrollment.score. Also, hs.type has a considerable effect on toeic results.
+
+Gender and hs.location have a lower but significant impact in toeic results. On the other hand, hs.score, math, and science do not have strong correlations with toeic.
+
+Spanish correlates strongly with history and also, in a lower degree, with science.
+
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+
+Math and hs.core have a strong negative correlation. This could be explained as these scores are the two strongest coeficients in the enrollment net score equation. Also considering that most of the data is located at the very end of tests' scale, it is likely that one enrollment has either a high score in math or high score at high school, but not both.
+
+### What was the strongest relationship you found?
+
+Enrollments' toeic test results are positively and strongly correlated with spanish results. With less strenght, toeic also correlates with enrollment.score and history.  
+
+***
+
+# Multivariate Plots Section
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+# Create density plots to analyse mutiple variables
+ggplot(aes(x=toeic/spanish, color=hs.type), data=enrollments) + 
+  geom_density() +
+  scale_color_brewer(palette="Set1")
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=toeic/spanish, color=gender), data=enrollments) + 
+  geom_density() +
+  scale_color_brewer(palette="Set2") +
+  theme_dark()
+```
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=toeic/spanish, color=hs.location), data=enrollments) + 
+  geom_density() +
+  scale_color_brewer(palette="Paired") +
+  theme_dark()
+```
+
+Given the correlation between toeic and spanish, I created a ratio between these two, in order to establish a "general linguistic" measurement. Then I wanted to see how these three categorical variables distributed along this ratio. 
+
+Now let's see how these variables affect on the relation betweem toeic and spanish, in order to try and build a predictive model.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+# Create scatter plots to analyse mutiple variables
+ggplot(aes(x=spanish, y=toeic, color=hs.type), data=enrollments) + 
+  geom_point(position = 'jitter', size=1, alpha=1) +
+  scale_x_continuous(limits = c(500, 850)) +
+  scale_color_brewer(palette="Set1")
+```
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=spanish, y=toeic, color=hs.type), data=enrollments) + 
+  geom_point(position = 'jitter', size=1, alpha=1) +
+  scale_x_continuous(limits = c(615, 825)) +
+  scale_color_brewer(palette="Set1") +
+  facet_wrap(~gender, ncol=1)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=spanish, y=toeic, color=hs.type), data=enrollments) + 
+  geom_point(position = 'jitter', size=1, alpha=1) +
+  scale_x_continuous(limits = c(615, 825)) +
+  scale_color_brewer(palette="Set1") +
+  facet_wrap(~hs.location, ncol=1)
+```
+
+There's is a trend of higher toeic results for private high school enrollments, although this trend it's not very clear when looking high schools from other regions.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=spanish, y=toeic, color=gender), data=enrollments) + 
+  geom_point(position = 'jitter', alpha=1, size=1) +
+  scale_x_continuous(limits = c(500, 850)) +
+  scale_color_brewer(palette="Set2") +
+  theme_dark()
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=spanish, y=toeic, color=gender), data=enrollments) + 
+  geom_point(position = 'jitter', alpha=1, size=1) +
+  scale_x_continuous(limits = c(615, 825)) +
+  scale_color_brewer(palette="Set2") +
+  theme_dark() +
+  facet_wrap(~hs.type, ncol=1)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=spanish, y=toeic, color=gender), data=enrollments) + 
+  geom_point(position = 'jitter', alpha=1, size=1) +
+  scale_x_continuous(limits = c(615, 825)) +
+  scale_color_brewer(palette="Set2") +
+  theme_dark() +
+  facet_wrap(~hs.location, ncol=1)
+```
+
+There is a small trend on higher scores for male enrollments, although not as strong as with hs.type.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=spanish, y=toeic, color=hs.location), data=enrollments) + 
+  geom_point(position = 'jitter', alpha=0.5, size=2) +
+  scale_x_continuous(limits = c(500, 850)) +
+  scale_color_brewer(palette="Paired") +
+  theme_dark()
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=spanish, y=toeic, color=hs.location), data=enrollments) + 
+  geom_point(position = 'jitter', alpha=1, size=1) +
+  scale_x_continuous(limits = c(615, 825)) +
+  scale_color_brewer(palette="Paired") +
+  theme_dark() +
+  facet_wrap(~hs.type, ncol=1)
+```
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=spanish, y=toeic, color=hs.location), data=enrollments) + 
+  geom_point(position = 'jitter', alpha=1, size=1) +
+  scale_x_continuous(limits = c(615, 825)) +
+  scale_color_brewer(palette="Paired") +
+  theme_dark() +
+  facet_wrap(~gender, ncol=1)
+```
+
+These plots suggest that we can build a linear model and use those variables in the linear model to predict the enrollment's TOEIC results.
+
+
+```{r Building the Linear Model}
+# Create variables corresponding to each different model
+m1 <- lm(toeic ~ spanish, data = enrollments)
+m2 <- update(m1, ~ . + hs.type)
+m3 <- update(m2, ~ . + gender)
+m4 <- update(m3, ~ . + enrollment.score)
+m5 <- update(m4, ~ . + history)
+m6 <- update(m5, ~ . + hs.location)
+
+# Table the results for each model
+mtable(m1, m2, m3, m4, m5, m6, sdigits = 3)
+```
+
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
+
+Private high schools have a higher median for the ratio toeic/spanish. The variance across the groups seems to be about the same with semiprivate type of high school having the greatest variation for the middle 50% of enrollments.
+
+Holding spanish test results constant, enrollments coming from a private high school get consistent higher toeic results than enrollments coming from a public or semiprivate high school.
+
+### Were there any interesting or surprising interactions between features?
+
+Even though the impact of private high schools in toeic level results is high, this difference it is not so noticeable for enrollments coming from public or semiprivate high schools located outside of the capital city.
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the strengths and limitations of your model.
+
+Yes, I created a linear model starting from the toeic test results and spanish test results.
+
+The variables in the linear model account for 21.4% of the variance in the toeic test results. Hs.type and gender improved the model considerably. The adition of history, enrollment.score and hs.location, improved moderatly the R^2 value, which is coherent with what we saw in the plots.
+
+***
+
+# Final Plots and Summary
+
+### Plot One
+
+```{r echo=FALSE}
+ggplot(aes(x=toeic), data=enrollments) +
+  geom_histogram(binwidth = 21) +
+  ggtitle("Enrollments' TOEIC results") +
+  xlab("TOEIC results (points)") +
+  ylab("Number of enrollments")
+
+
+```
+
+### Description One
+
+The distribution of the TOEIC results for the enrollments appears to be unimodel peaking around 475. This is considerably low considering that the highest possible score is 990 points.
+
+### Plot Two
+
+```{r echo=FALSE  }
+ggplot(aes(y=toeic, x=hs.type, fill=hs.type), data=enrollments) +
+  geom_boxplot() +
+  ggtitle("TOEIC results by High School Type") +
+  xlab("High School Type") +
+  ylab("TOEIC results (score)") +
+  scale_fill_brewer(palette="Set1") +
+  labs(fill="High School Type")
+
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=toeic/spanish, color=hs.type), data=enrollments) + 
+  geom_density() +
+  ggtitle("Density of TOEIC/Spanish ratio by High School Type") +
+  xlab("TOEIC/Spanish ratio") +
+  ylab("Density") +
+  scale_color_brewer(palette="Set1") +
+  labs(color="High School Type")
+```
+
+### Description Two
+
+Enrollments coming from private high schools have the highest median TOEIC result. The variance in TOEIC results it's larger for enrollments coming from semiprivate high schools. In the case of public high schools, the variance is lower, similar to private high schools, but the median TOEIC results found here it's lower and almost the same as for semiprivate high schools.
+
+### Plot Three
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(aes(x=spanish, y=toeic, color=hs.type), data=enrollments) + 
+  geom_point(position = 'jitter', size=1, alpha=1) +
+  scale_x_continuous(limits = c(550, 825)) +
+  scale_color_brewer(palette="Set1") +
+  ggtitle("TOEIC score by Spanish level and High School Type") +
+  labs(x="Spanish test (score)", y="TOEIC test (score)", color="High School Type")
+  
+```
+
+### Description Three
+
+The plot indicates that a linear model could be constructed to predict enrollments's TOEIC performance using toeic as the outcome variable and spanish as the predictor variable. Holding spanish results constant, enrollments coming from private high schools, get consistent higher toeic results than enrollments coming from public or semiprivate high schools.
+
+# Reflection
+
+The enrollments data set contains information on almost 2,000 new students of the Faculty of Business and Economics of the University of Chile enrolled between 2005 and 2010, across 10 variables including scores from the National Higher Education Selection test, as well as variables related to their high schools. 
+
+I started by looking and analysing the behaviour of certain variables within the data set, then I explored some questions of my interest as I kept on making observations on plots. Eventually I explored the TOEIC test results an its relation with the Spanish test scores and created a linear model to predict TOEIC test results.
+
+There was a clear trend between spanish results and TOEIC results. I was surprised to find out that the high school score didn't influenced the performance on the TOEIC test and that also had a negative strong correlation with math test results. These two variables have a strong relative weight in the equation for enrollment so it seems logical to think that enrollments would have high scores in either one or the other. 
+
+I was also expecting that enrollments coming from outside of the main capital would have had lower scores in the TOEIC test, but location turned out to have no effect. Then I realized that a private high schools had a strong positive effect on TOEIC results, which makes sense in a developing country like Chile.
+
+The first and obvious limitations responds to missing variables, that are inherit of the person's background, interest and skills. The other limitations of this model include the source of the data. Given that enrollments consider only periods between 2005 and 2010, and also that these recent students reflect only to a tiny part of the population's interests and capabilities. Maybe today the linguistic skills have evolved under some other correlations like, social exposure, philosofical knowledge, or something else. At the same time, maybe recent high school graduates who are interested in arts have a more direct correlation between english skills and, for example, their sense of aesthetics. 
+
+In any case, I would be interested to analyse more updated data to see if maybe it could be worth to get enrollments from other disciplines to undertake the TOEIC test and hopefully increase the model's accuracy. Under this context, and if the trends are still coming up, this could be a good input scource for public policy: It could be the case that it is worthwhile focusing the nations' educational budget in languages (spanish+english) rather than just in spanish.
+
+

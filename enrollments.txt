@@ -1,0 +1,47 @@
+
+enrollments {ggplot2}	R Documentation
+
+# Tests scores of 2,000 higher education new enrollments
+
+### Description
+
+A dataset containing the results for the Test of English for International Communication (TOEIC), results for the Chilean Higher Education Selection Exam (PSU) as well as other attributes of almost 2,000 new enrollments. The variables are as follows:
+
+### Source
+
+Dataset has been collected with the approval and consent of the Studies Secretary from the Faculty of Business and Economics of the University of Chile.
+
+### Format
+
+A data frame with 1956 rows and 10 variables:
+
+year
+	a record of the year of enrollment (2005-2010)
+
+gender
+	male or female	
+
+hs.type
+	clasification of the high school: private, public or semiprivate
+
+hs.location
+	wether the high school was located in the capital city or in some other state (region)
+
+hs.score
+	transformation of the enrollment's high school average mark (1 to 7) into a comparable scale (350-850)
+
+math
+	score in the mathematics section of the national higher education selection exam
+
+history
+	score in the history section of the national higher education selection exam
+
+science
+	score in the history section of the national higher education selection exam
+
+spanish
+	score in the history section of the national higher education selection exam
+
+toeic
+	score in the Test of English for International Communication (TOEIC), undertaken after enrollment
+
