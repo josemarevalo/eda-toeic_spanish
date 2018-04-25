@@ -60,7 +60,8 @@ The TOEIC distribution appears to be unimodal with the score peaking around 475.
 It's important to note that the scale tof this test goes from 10 to 990, so the mean (461) it's quite low.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
-qplot(x=year, data=enrollments, geom = 'histogram')
+ggplot(enrollments, aes(x=factor(year))) +
+  geom_bar()
 ```
 
 
@@ -246,6 +247,7 @@ Nope. Even after adding jitter, transparency, and changing the size of the point
 ggplot(aes(y=toeic, x=history), data=enrollments) +
   geom_point(alpha=0.5, size=3)
 ```
+
 There is definitely a positive correlation, but the slope is not high as in with spanish.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -255,7 +257,7 @@ ggplot(aes(y=toeic, x=enrollment.score), data=enrollments) +
   geom_smooth(method = lm)
 ```
 
-This one was harder to see, so ontop of the jitter, size and transparency, I utilised a smooth line (linear model) to establish the relation between toeic and enrollment.score.  
+This one was harder to see, so on top of the jitter, size and transparency, I utilised a smooth line (linear model) to establish the relation between toeic and enrollment.score.  
 
 Before I move on, I want to take another look to the relationship between hs.score and math.
 
