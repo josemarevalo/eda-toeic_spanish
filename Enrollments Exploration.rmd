@@ -1,10 +1,12 @@
 ---
-title: "Enrollments Exploration by José Arévalo"
-output:
+title: "Enrollments Exploration"
+author: José M. Arévalo
+date: April 25, 2018
+output: 
   html_document:
-    df_print: paged
-editor_options:
-  chunk_output_type: inline
+    toc: true
+    toc_depth: 3
+    toc_float: true
 ---
 
 This report explores a dataset containing results for the Test of English for International Communication (TOEIC), for approximately 2,000 enrollments of the Faculty of Business and Economics from the University of Chile. It also contains their results on the Chilean Higher Education Selection Exam (PSU) as well as other atributtes related to their High Schools.
