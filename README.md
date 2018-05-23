@@ -16,4 +16,4 @@ Just contact me at jose.matias.arevalo@gmail.com
 
 ## License
 
-The contents of this repository are covered under the [MIT License](https://choosealicense.com/licenses/mit/).
+The contents of this repository are covered under the [MIT License](LICENSE.txt).
